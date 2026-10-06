@@ -4,7 +4,7 @@
 
 [![Nền tảng](https://img.shields.io/badge/platform-Android-green.svg)](https://www.android.com/)
 [![Android](https://img.shields.io/badge/Android-%3E%3D6.0-brightgreen.svg)](https://www.android.com/)
-[![Phiên bản](https://img.shields.io/badge/version-2.1-blue.svg)](repo/com/eov/water-meter-sdk/)
+[![Phiên bản](https://img.shields.io/badge/version-2.2-blue.svg)](repo/com/eov/water-meter-sdk/)
 [![Giấy phép](https://img.shields.io/badge/license-EOV-orange.svg)](#-giấy-phép)
 
 Repo này là **Maven repository phân phối** — thư mục [`repo/`](repo/) chứa file AAR build sẵn kèm POM. Không cần tải file thủ công, chỉ cần khai báo dependency trong Gradle.
@@ -49,7 +49,7 @@ dependencyResolutionManagement {
 ```gradle
 // app/build.gradle
 dependencies {
-    implementation 'com.eov:water-meter-sdk:2.1'
+    implementation 'com.eov:water-meter-sdk:2.2'
 }
 ```
 
@@ -85,7 +85,7 @@ Quyền (`CAMERA`, `INTERNET`...) và các Activity của SDK đã được khai
 
 ```bash
 ./gradlew :app:dependencies --configuration releaseRuntimeClasspath | grep water-meter
-# Phải thấy: com.eov:water-meter-sdk:2.0
+# Phải thấy: com.eov:water-meter-sdk:2.2
 ```
 
 ### Nếu app bật minify (Proguard/R8)
@@ -471,12 +471,18 @@ SDK chỉ hỗ trợ ABI `armeabi-v7a` và `arm64-v8a`. Test trên thiết bị 
 Khi có bản mới, chỉ cần đổi số version rồi sync lại Gradle:
 
 ```gradle
-implementation 'com.eov:water-meter-sdk:2.1'
+implementation 'com.eov:water-meter-sdk:2.2'
 ```
 
 Các version cũ vẫn được giữ trong [`repo/`](repo/) để rollback khi cần.
 
 ## 📝 Lịch sử thay đổi
+
+### Phiên bản 2.2
+
+- Sửa lỗi camera lấy nét chậm, dễ mất nét khiến ảnh đồng hồ bị mờ sau khi zoom — autofocus không còn bị khóa, luôn lấy nét liên tục
+- Vùng lấy nét đặt đúng vị trí đồng hồ trên màn hình ở mọi mức zoom
+- Khi không phát hiện đồng hồ, tự lấy nét ở tâm khung quét (giống chạm để lấy nét)
 
 ### Phiên bản 2.1
 
@@ -485,7 +491,7 @@ Các version cũ vẫn được giữ trong [`repo/`](repo/) để rollback khi 
 - Không còn âm thầm bật cleartext traffic cho app host (license server dùng HTTPS)
 
 ### Phiên bản 2.0
-cccc
+
 - Model AI đóng gói sẵn trong AAR
 - Điều khiển flash và zoom
 - Tự động chụp khi độ tin cậy cao
