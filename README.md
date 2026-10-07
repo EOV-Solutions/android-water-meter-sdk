@@ -4,7 +4,7 @@
 
 [![Nền tảng](https://img.shields.io/badge/platform-Android-green.svg)](https://www.android.com/)
 [![Android](https://img.shields.io/badge/Android-%3E%3D6.0-brightgreen.svg)](https://www.android.com/)
-[![Phiên bản](https://img.shields.io/badge/version-2.2-blue.svg)](repo/com/eov/water-meter-sdk/)
+[![Phiên bản](https://img.shields.io/badge/version-2.3-blue.svg)](repo/com/eov/water-meter-sdk/)
 [![Giấy phép](https://img.shields.io/badge/license-EOV-orange.svg)](#-giấy-phép)
 
 Repo này là **Maven repository phân phối** — thư mục [`repo/`](repo/) chứa file AAR build sẵn kèm POM. Không cần tải file thủ công, chỉ cần khai báo dependency trong Gradle.
@@ -49,7 +49,7 @@ dependencyResolutionManagement {
 ```gradle
 // app/build.gradle
 dependencies {
-    implementation 'com.eov:water-meter-sdk:2.2'
+    implementation 'com.eov:water-meter-sdk:2.3'
 }
 ```
 
@@ -85,7 +85,7 @@ Quyền (`CAMERA`, `INTERNET`...) và các Activity của SDK đã được khai
 
 ```bash
 ./gradlew :app:dependencies --configuration releaseRuntimeClasspath | grep water-meter
-# Phải thấy: com.eov:water-meter-sdk:2.2
+# Phải thấy: com.eov:water-meter-sdk:2.3
 ```
 
 ### Nếu app bật minify (Proguard/R8)
@@ -204,6 +204,8 @@ WaterMeterSDK.startCameraScan(this, REQUEST_SCAN,
         .setAutoCloseOnResult(true)          // Tự động đóng khi quét thành công
         .setImageMaxWidth(1920)              // Resize ảnh về max width (giữ tỷ lệ)
         .setImageMaxHeight(1080)             // Resize ảnh về max height (giữ tỷ lệ)
+        .setImageSaveDir(new File(getFilesDir(), "meter_photos").getAbsolutePath()) // Thư mục lưu ảnh
+        .setImageFileName("KH001_202610.jpg") // Tên file ảnh
 );
 ```
 
@@ -408,8 +410,24 @@ Tăng quota sử dụng (báo về server chạy nền). **Bình thường khôn
 | `setAutoCloseOnResult(boolean)` | boolean | false | Tự đóng màn hình khi quét thành công |
 | `setImageMaxWidth(int)` | number | 0 (ảnh gốc) | Chiều rộng tối đa ảnh lưu (px) |
 | `setImageMaxHeight(int)` | number | 0 (ảnh gốc) | Chiều cao tối đa ảnh lưu (px) |
+| `setImageSaveDir(String)` | String | null (thư mục mặc định của SDK) | Đường dẫn tuyệt đối (hoặc URL `file://`) tới thư mục lưu ảnh |
+| `setImageFileName(String)` | String | null (`<timestamp>.jpg`) | Tên file ảnh (chỉ tên, không gồm thư mục) |
 
 **Lưu ý:** Resize ảnh giữ tỷ lệ. Nếu chỉ định cả width và height, ảnh sẽ fit trong bounds.
+
+### Thư mục và tên file lưu ảnh
+
+Mặc định ảnh được lưu tại `<getExternalFilesDir(Pictures)>/WaterMeter/<timestamp>.jpg`, tức là
+`/storage/emulated/0/Android/data/<package app>/files/Pictures/WaterMeter/1746347465582.jpg`.
+
+Để lưu ảnh vào thư mục khác, dùng `setImageSaveDir` và `setImageFileName`:
+
+- Thư mục chưa có thì SDK tự tạo.
+- Tên file không có đuôi `.jpg`/`.jpeg` thì SDK tự thêm `.jpg`. Nếu đã có file trùng tên, file cũ bị ghi đè.
+- Thư mục phải là nơi app của bạn có quyền ghi, ví dụ `getFilesDir()`, `getCacheDir()` hoặc `getExternalFilesDir(...)`. Từ Android 10 (scoped storage), app không ghi trực tiếp được vào thư mục chung như `/sdcard/DCIM`. Muốn ảnh xuất hiện trong thư viện ảnh thì sau khi nhận kết quả, app tự copy ảnh vào `MediaStore`.
+- Nếu không ghi được vào thư mục đã chỉ định, SDK lưu ảnh vào thư mục mặc định. Vì vậy luôn đọc đường dẫn thật từ `EXTRA_RESULT_IMAGE_PATH`, đừng tự ghép đường dẫn.
+
+Nếu tự tạo `Intent` thay vì dùng `CameraScanBuilder`, truyền extra `WaterMeterSDK.EXTRA_IMAGE_SAVE_DIR` và `WaterMeterSDK.EXTRA_IMAGE_FILE_NAME` (kiểu String).
 
 ## 🔧 Khắc phục sự cố
 
@@ -471,12 +489,20 @@ SDK chỉ hỗ trợ ABI `armeabi-v7a` và `arm64-v8a`. Test trên thiết bị 
 Khi có bản mới, chỉ cần đổi số version rồi sync lại Gradle:
 
 ```gradle
-implementation 'com.eov:water-meter-sdk:2.2'
+implementation 'com.eov:water-meter-sdk:2.3'
 ```
 
 Các version cũ vẫn được giữ trong [`repo/`](repo/) để rollback khi cần.
 
 ## 📝 Lịch sử thay đổi
+
+### Phiên bản 2.3
+
+- Tự động chụp được cả khi để điện thoại sát mặt đồng hồ (mặt đồng hồ lấp đầy màn hình), miễn là vùng số nằm trọn trong khung quét
+- Chỉ tự động chụp khi hình ổn định liên tục 1 giây — giảm ảnh mờ do rung tay
+- Sửa lỗi crash khi đóng màn hình quét đúng lúc camera đang mở hoặc đang lấy nét
+- Sửa lỗi camera bị giữ lại khi thoát màn hình quét quá nhanh, khiến lần quét sau báo "Camera error"
+- Thông báo lỗi license rõ nguyên nhân (tiếng Việt) khi kích hoạt hoặc đồng bộ thất bại vì **không có mạng** hoặc **không kết nối được máy chủ license**, thay cho thông báo "Trial period exhausted..."
 
 ### Phiên bản 2.2
 
